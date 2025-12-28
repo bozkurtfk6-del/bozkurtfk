@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>HYPER GAMING - Admin</title>
+  <style>
+    body{font-family:Inter,system-ui,Arial;background:#f4f6f8;padding:20px;color:#222}
+    .card{background:white;padding:18px;border-radius:10px;max-width:1100px;margin:0 auto;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+    th{background:#fafafa}
+    button{padding:6px 10px;border-radius:6px;border:none;background:#2a6fb3;color:#fff;cursor:pointer}
+    .small{font-size:13px;color:#666;margin-bottom:8px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Yönetici - Kayıtlar (HYPER GAMING)</h1>
+    <p class="small">LocalStorage'daki kayıtları gösterir. "Satın Alındı" durumunu buradan değiştirebilirsiniz.</p>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button id="refresh">Yenile</button>
+      <button id="clear">Bütün Kayıtları Sil</button>
+      <button id="download">CSV İndir</button>
+    </div>
+    <div id="tableWrap"></div>
+  </div>
+
+<script>
+function loadRegs(){ try { return JSON.parse(localStorage.getItem('bozkurt_regs')||'[]'); } catch(e){ return []; } }
+
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]); }
+
+function render(){
+  const regs = loadRegs();
+  const wrap = document.getElementById('tableWrap');
+  if(!regs.length){ wrap.innerHTML = '<div style="padding:10px;color:#666">Kayıt bulunamadı.</div>'; return; }
+  let html = '<table><thead><tr><th>#</th><th>İsim</th><th>Soyisim</th><th>Telefon</th><th>Doğum Yılı</th><th>Pozisyon</th><th>Forma</th><th>Steam ID</th><th>Satın Alındı</th><th>Not</th><th>Zaman</th><th>İşlem</th></tr></thead><tbody>';
+  regs.forEach((r,i)=>{
+    html += `<tr data-idx="${i}"><td>${i+1}</td><td>${escapeHtml(r.isim)}</td><td>${escapeHtml(r.soyisim)}</td><td>${escapeHtml(r.telefon)}</td><td>${escapeHtml(r.dyil)}</td><td>${escapeHtml(r.pozisyon)}</td><td>${escapeHtml(r.forma)}</td><td>${escapeHtml(r.steam||'')}</td><td>${r.paid ? '✅' : '—'}</td><td>${escapeHtml(r.bio)}</td><td>${escapeHtml(r.timestamp)}</td><td><button class="togglePaid" data-i="${i}">${r.paid ? 'Satışı Geri Al' : 'Satın Alındı Yap'}</button> <button class="editSteam" data-i="${i}">Steam Düzenle</button></td></tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+document.getElementById('refresh').addEventListener('click', render);
+document.getElementById('clear').addEventListener('click', ()=>{ if(confirm('Tüm kayıtlar silinsin mi?')){ localStorage.removeItem('bozkurt_regs'); render(); }});
+document.getElementById('download').addEventListener('click', ()=>{
+  const regs = loadRegs();
+  if(!regs.length){ alert('Kayıt yok'); return; }
+  const keys = ['isim','soyisim','telefon','dyil','pozisyon','forma','steam','paid','bio','timestamp'];
+  const header = keys.join(',') + '\n';
+  const csv = regs.map(r=> keys.map(k=> '"'+ ((r[k]||'').toString().replace(/"/g,'""')) +'"').join(',')).join('\n');
+  const blob = new Blob([header+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'bozkurt_regs.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+// Delegate click events
+document.getElementById('tableWrap').addEventListener('click', async (e) => {
+  const t = e.target;
+  if (t.classList.contains('togglePaid')) {
+    const i = Number(t.dataset.i);
+    const regs = loadRegs();
+    regs[i].paid = !regs[i].paid;
+    localStorage.setItem('bozkurt_regs', JSON.stringify(regs));
+    render();
+  } else if (t.classList.contains('editSteam')) {
+    const i = Number(t.dataset.i);
+    const regs = loadRegs();
+    const newSteam = prompt('Yeni Steam ID gir:', regs[i].steam || '');
+    if (newSteam !== null) {
+      regs[i].steam = newSteam.trim();
+      localStorage.setItem('bozkurt_regs', JSON.stringify(regs));
+      render();
+    }
+  }
+});
+
+// initial render
+render();
+</script>
+</body>
+</html>

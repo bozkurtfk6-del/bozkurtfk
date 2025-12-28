@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HYPER GAMING - Kayıt</title>
+  <style>
+    :root{--blue:#2a6fb3;--grey:#6b6f76;--bg:#f4f6f8}
+    html,body{height:100%;margin:0}
+    body{
+      font-family:Inter,system-ui,Arial;
+      color:#222;
+      background-image: url('/public/assets/bg.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    body::before{ content: ""; position: fixed; inset: 0; background: rgba(0,0,0,0.38); z-index: 0; pointer-events: none; }
+    header, main, footer, .card { position: relative; z-index: 1; }
+    header{background:linear-gradient(90deg,var(--grey),var(--blue)); color:white; padding:18px 16px; display:flex; align-items:center; gap:12px}
+    .logo{width:56px;height:56px;border-radius:10px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-weight:700}
+    main{max-width:900px;margin:28px auto;padding:16px}
+    .card{background:rgba(255,255,255,0.96);border-radius:12px;box-shadow:0 6px 18px rgba(31,41,55,0.06);padding:20px;margin-bottom:16px}
+    h1{margin:0 0 8px 0}
+    form .row{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+    label{font-size:13px;color:#444;margin-bottom:6px;display:block}
+    input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ee;font-size:14px}
+    button{background:var(--blue);color:white;padding:10px 14px;border-radius:8px;border:none;font-weight:600;cursor:pointer}
+    .muted{color:#666;font-size:13px}
+    footer{max-width:900px;margin:16px auto;text-align:center;color:#666;font-size:13px}
+    .note{background:#fff7e6;padding:10px;border-radius:8px;color:#7a4b00;border:1px solid #ffecb3;margin-bottom:12px}
+    @media (max-width:600px){ main{margin:16px} }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">HG</div>
+    <div>
+      <div style="font-weight:700">HYPER GAMING</div>
+      <div style="font-size:13px;opacity:0.95">Resmi Kayıt Sayfası</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h1>Üye / Oyuncu Kayıt Formu</h1>
+      <p class="muted">Takıma katılmak için formu doldurun. Yöneticiler kayıtları admin sayfasından görüntüleyebilir ve CSV indirebilir.</p>
+
+      <div class="note">Not: Bu sürüm verileri tarayıcı localStorage içinde tutar. İstersen sunucu tarafı kayıt (Node/SQLite veya PHP/MySQL) olarak düzeltebilirim.</div>
+
+      <form id="regForm">
+        <div class="row">
+          <div style="flex:1;min-width:140px">
+            <label>İsim</label>
+            <input type="text" id="isim" required>
+          </div>
+          <div style="flex:1;min-width:140px">
+            <label>Soyisim</label>
+            <input type="text" id="soyisim" required>
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1;min-width:140px">
+            <label>Telefon</label>
+            <input type="tel" id="telefon" placeholder="+90 5xx xxx xx xx" required>
+          </div>
+          <div style="flex:1;min-width:140px">
+            <label>Doğum Yılı</label>
+            <input type="number" id="dyil" min="1900" max="2100" placeholder="2000">
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1;min-width:140px">
+            <label>Pozisyon</label>
+            <select id="pozisyon">
+              <option>Kaleci</option>
+              <option>Defans</option>
+              <option>Orta Saha</option>
+              <option>Forvet</option>
+              <option>Yedek</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:140px">
+            <label>Forma Numarası (isteğe bağlı)</label>
+            <input type="number" id="forma" min="1" max="99">
+          </div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>Steam ID (isteğe bağlı)</label>
+          <input type="text" id="steam" placeholder="STEAM_0:1:123... veya 7656...">
+        </div>
+        <div style="margin-bottom:12px">
+          <label>Kısa Bilgi / Kendini Tanıt</label>
+          <textarea id="bio" rows="4" placeholder="Kısa bir açıklama..."></textarea>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center">
+          <button type="submit">Kayıt Ol</button>
+          <a href="admin.html" style="margin-left:8px;align-self:center;color:#fff;background:rgba(0,0,0,0.2);padding:8px;border-radius:8px;text-decoration:none">Yönetici Sayfası</a>
+        </div>
+      </form>
+      <div id="msg" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Takım Hakkında</h2>
+      <p style="color:#333">HYPER GAMING — Takımınıza hoş geldiniz. Formu doldurduktan sonra yöneticiler sizi arayabilir.</p>
+    </div>
+  </main>
+
+  <footer>© HYPER GAMING — Hazır site · Lokal kayıt sistemi</footer>
+
+<script>
+const form = document.getElementById('regForm');
+const msg = document.getElementById('msg');
+
+function loadRegs(){ try { return JSON.parse(localStorage.getItem('bozkurt_regs')||'[]'); } catch(e) { return []; } }
+function saveRegs(arr){ localStorage.setItem('bozkurt_regs', JSON.stringify(arr)); }
+
+form.addEventListener('submit', e=>{
+  e.preventDefault();
+  const reg = {
+    isim: document.getElementById('isim').value.trim(),
+    soyisim: document.getElementById('soyisim').value.trim(),
+    telefon: document.getElementById('telefon').value.trim(),
+    dyil: document.getElementById('dyil').value.trim(),
+    pozisyon: document.getElementById('pozisyon').value,
+    forma: document.getElementById('forma').value,
+    bio: document.getElementById('bio').value.trim(),
+    steam: document.getElementById('steam').value.trim() || '',
+    paid: false,
+    timestamp: new Date().toISOString()
+  };
+  const arr = loadRegs();
+  arr.push(reg);
+  saveRegs(arr);
+  msg.innerHTML = '<strong style="color:green">Kayıt başarıyla alındı!</strong>';
+  form.reset();
+  setTimeout(()=>msg.innerHTML='',3000);
+});
+</script>
+</body>
+</html>
